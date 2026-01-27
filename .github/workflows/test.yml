@@ -1,0 +1,18 @@
+name: System Info
+
+on: [push, pull_request]
+
+jobs:
+  check-system-info:
+    name: ${{ matrix.os }} Info
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run System Info Script
+        run: bash claw.sh
+
+
