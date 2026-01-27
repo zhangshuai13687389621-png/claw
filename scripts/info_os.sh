@@ -1,6 +1,6 @@
 #!/bin/bash
 
-echo "=== Operating System Information ==="
+echo "=== 操作系统信息 ==="
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS
@@ -17,6 +17,6 @@ elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "win32" ]]; then
         cmd //c ver
     fi
 else
-    echo "Unknown OS: $OSTYPE"
+    echo "未知系统: $OSTYPE"
     uname -a
 fi
