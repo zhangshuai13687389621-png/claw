@@ -16,8 +16,8 @@ jobs:
         if: runner.os != 'Windows'
         run: bash claw.sh
 
-      - name: Test Install Script (Dry Run)
+      - name: Run Install Script (Real)
         if: runner.os != 'Windows'
-        run: bash install.sh --dry-run --no-prompt
+        run: bash install.sh --no-prompt --no-onboard
 
 
