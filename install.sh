@@ -354,6 +354,16 @@ install_node() {
         echo -e "${WARN}→${NC} 正在通过 Homebrew 安装 Node.js..."
         brew install node@22
         brew link node@22 --overwrite --force 2>/dev/null || true
+        
+        # Ensure node is in PATH
+        local node_prefix
+        node_prefix="$(brew --prefix node@22 2>/dev/null || true)"
+        if [[ -n "$node_prefix" && -d "$node_prefix/bin" ]]; then
+             export PATH="$node_prefix/bin:$PATH"
+        fi
+        
+        hash -r 2>/dev/null || true
+        
         echo -e "${SUCCESS}✓${NC} Node.js 已安装"
 	    elif [[ "$OS" == "linux" ]]; then
 	        echo -e "${WARN}→${NC} 正在通过 NodeSource 安装 Node.js..."
@@ -363,8 +373,8 @@ install_node() {
 	            tmp="$(mktempfile)"
 	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
                 # 替换为华为云镜像源
-                sed -i 's|deb.nodesource.com|mirrors.huaweicloud.com/nodesource/deb|g' "$tmp"
-	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
+                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
+                sed -i 's|deb.nodesource.com/node_|mirrors.huaweicloud.com/nodesource/deb/node_|g' "$tmp"
 	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
 	            $SUDO_CMD apt-get install -y nodejs npm
 	        elif command -v dnf &> /dev/null; then
@@ -372,8 +382,8 @@ install_node() {
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
                 # 替换为华为云镜像源
-                sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
-	            $SUDO_CMD bash "$tmp"
+                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
+                sed -i 's|rpm.nodesource.com/pub_|mirrors.huaweicloud.com/nodesource/rpm/pub_|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
 	            $SUDO_CMD dnf install -y nodejs npm
 	        elif command -v yum &> /dev/null; then
@@ -381,8 +391,8 @@ install_node() {
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
                 # 替换为华为云镜像源
-                sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
-	            $SUDO_CMD bash "$tmp"
+                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
+                sed -i 's|rpm.nodesource.com/pub_|mirrors.huaweicloud.com/nodesource/rpm/pub_|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
 	            $SUDO_CMD yum install -y nodejs npm
 	        else
