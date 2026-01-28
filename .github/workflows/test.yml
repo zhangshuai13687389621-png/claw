@@ -20,4 +20,31 @@ jobs:
         if: runner.os != 'Windows'
         run: bash install.sh --no-prompt --no-onboard
 
+      - name: Uninstall Node.js (macOS Clean Test)
+        if: runner.os == 'macOS'
+        run: |
+          brew analytics off
+          brew uninstall node --ignore-dependencies --force || true
+          rm -rf /usr/local/bin/node /usr/local/lib/node_modules
+          source ~/.bash_profile || true
+          source ~/.zshrc || true
+          
+      - name: Run Install Script (Clean macOS)
+        if: runner.os == 'macOS'
+        run: bash install.sh --no-prompt --no-onboard
+
+  test-clean-linux:
+    name: Clean Install (Ubuntu Docker)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Install in Clean Docker Container
+        run: |
+          docker run --rm -v "$(pwd):/app" ubuntu:24.04 bash -c "
+            apt-get update && apt-get install -y curl && 
+            cd /app && 
+            bash install.sh --no-prompt --no-onboard
+          "
+
 

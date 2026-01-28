@@ -20,6 +20,7 @@ NC='\033[0m' # No Color
 DEFAULT_TAGLINE="所有聊天，一个 Clawdbot。"
 
 ORIGINAL_PATH="${PATH:-}"
+SUDO_CMD=""
 
 TMPFILES=()
 cleanup_tmpfiles() {
@@ -364,24 +365,27 @@ install_node() {
 	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
                 # 替换为清华源
                 sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
-	            sudo -E bash "$tmp"
-	            sudo apt-get install -y nodejs
+	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
+                # 替换为清华源
+                sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
+	            $SUDO_CMD -E bash "$tmp"
+	            $SUDO_CMD apt-get install -y nodejs
 	        elif command -v dnf &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
                 # 替换为清华源
                 sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
-	            sudo bash "$tmp"
-	            sudo dnf install -y nodejs
+	            $SUDO_CMD bash "$tmp"
+	            $SUDO_CMD dnf install -y nodejs
 	        elif command -v yum &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
                 # 替换为清华源
                 sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
-	            sudo bash "$tmp"
-	            sudo yum install -y nodejs
+	            $SUDO_CMD bash "$tmp"
+	            $SUDO_CMD yum install -y nodejs
 	        else
 	            echo -e "${ERROR}错误：无法检测到包管理器${NC}"
 	            echo "请手动安装 Node.js 22+: https://nodejs.org"
@@ -410,9 +414,11 @@ require_sudo() {
         return 0
     fi
     if is_root; then
+        SUDO_CMD=""
         return 0
     fi
     if command -v sudo &> /dev/null; then
+        SUDO_CMD="sudo"
         return 0
     fi
     echo -e "${ERROR}错误：Linux 系统安装需要 sudo${NC}"
@@ -427,12 +433,12 @@ install_git() {
     elif [[ "$OS" == "linux" ]]; then
         require_sudo
         if command -v apt-get &> /dev/null; then
-            sudo apt-get update -y
-            sudo apt-get install -y git
+            $SUDO_CMD apt-get update -y
+            $SUDO_CMD apt-get install -y git
         elif command -v dnf &> /dev/null; then
-            sudo dnf install -y git
+            $SUDO_CMD dnf install -y git
         elif command -v yum &> /dev/null; then
-            sudo yum install -y git
+            $SUDO_CMD yum install -y git
         else
             echo -e "${ERROR}错误：无法检测到 Git 的包管理器${NC}"
             exit 1
@@ -690,9 +696,9 @@ resolve_clawdbot_bin() {
 
 install_clawdbot_from_git() {
     local repo_dir="$1"
-    local repo_url="https://github.com/clawdbot/clawdbot.git"
+    local repo_url="https://gitee.com/zhangs669/moltbot.git"
 
-    echo -e "${WARN}→${NC} 正在从 GitHub 安装 Clawdbot (${repo_url})..."
+    echo -e "${WARN}→${NC} 正在从 Gitee 安装 Clawdbot (${repo_url})..."
 
     if ! check_git; then
         install_git
