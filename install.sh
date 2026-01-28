@@ -1,5 +1,6 @@
 #!/bin/bash
 set -euo pipefail
+NPM_REGISTRY="https://registry.npmmirror.com"
 
 # Clawdbot Installer for macOS and Linux
 # Usage: curl -fsSL --proto '=https' --tlsv1.2 https://clawd.bot/install.sh | bash
@@ -93,11 +94,11 @@ install_clawdbot_npm() {
     local spec="$1"
     local log
     log="$(mktempfile)"
-    if ! SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g "$spec" 2>&1 | tee "$log"; then
+    if ! SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec" 2>&1 | tee "$log"; then
         if grep -q "ENOTEMPTY: directory not empty, rename .*clawdbot" "$log"; then
             echo -e "${WARN}→${NC} npm 留下了陈旧的 clawdbot 目录；正在清理并重试..."
             cleanup_npm_clawdbot_paths
-            SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g "$spec"
+            SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec"
             return $?
         fi
         return 1
@@ -307,8 +308,15 @@ echo -e "${SUCCESS}✓${NC} 检测到系统：$OS"
 install_homebrew() {
     if [[ "$OS" == "macos" ]]; then
         if ! command -v brew &> /dev/null; then
-            echo -e "${WARN}→${NC} 正在安装 Homebrew..."
-            run_remote_bash "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+            echo -e "${WARN}→${NC} 正在安装 Homebrew (使用中国镜像源)..."
+            # 配置 Homebrew 镜像变量
+            export HOMEBREW_API_DOMAIN="https://mirrors.tuna.tsinghua.edu.cn/homebrew-bottles/api"
+            export HOMEBREW_BREW_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/brew.git"
+            export HOMEBREW_CORE_GIT_REMOTE="https://mirrors.tuna.tsinghua.edu.cn/git/homebrew/homebrew-core.git"
+            export HOMEBREW_PIP_INDEX_URL="https://pypi.tuna.tsinghua.edu.cn/simple"
+            
+            # 使用 jsDelivr 代理安装脚本
+            run_remote_bash "https://cdn.jsdelivr.net/gh/Homebrew/install@HEAD/install.sh"
 
             # Add Homebrew to PATH for this session
             if [[ -f "/opt/homebrew/bin/brew" ]]; then
@@ -354,18 +362,24 @@ install_node() {
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
+                # 替换为清华源
+                sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
 	            sudo -E bash "$tmp"
 	            sudo apt-get install -y nodejs
 	        elif command -v dnf &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
+                # 替换为清华源
+                sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
 	            sudo bash "$tmp"
 	            sudo dnf install -y nodejs
 	        elif command -v yum &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
+                # 替换为清华源
+                sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
 	            sudo bash "$tmp"
 	            sudo yum install -y nodejs
 	        else
@@ -509,14 +523,15 @@ ensure_pnpm() {
     if command -v corepack &> /dev/null; then
         echo -e "${WARN}→${NC} 正在通过 Corepack 安装 pnpm..."
         corepack enable >/dev/null 2>&1 || true
-        corepack prepare pnpm@10 --activate
+        # Corepack prepare doesn't support registry flag easily, relies on npm setup but we can try setting env
+        NPM_CONFIG_REGISTRY="$NPM_REGISTRY" corepack prepare pnpm@10 --activate
         echo -e "${SUCCESS}✓${NC} pnpm 已安装"
         return 0
     fi
 
     echo -e "${WARN}→${NC} 正在通过 npm 安装 pnpm..."
     fix_npm_permissions
-    npm install -g pnpm@10
+    npm install -g pnpm@10 --registry "$NPM_REGISTRY"
     echo -e "${SUCCESS}✓${NC} pnpm 已安装"
     return 0
 }
@@ -699,7 +714,7 @@ install_clawdbot_from_git() {
 
     cleanup_legacy_submodules "$repo_dir"
 
-    SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" pnpm -C "$repo_dir" install
+    SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" pnpm -C "$repo_dir" install --registry "$NPM_REGISTRY"
 
     if ! pnpm -C "$repo_dir" ui:build; then
         echo -e "${WARN}→${NC} UI 构建失败；继续执行（CLI 可能仍可工作）"
