@@ -93,13 +93,12 @@ cleanup_npm_clawdbot_paths() {
 
 install_clawdbot_npm() {
     local spec="$1"
-    local log
     log="$(mktempfile)"
-    if ! SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec" 2>&1 | tee "$log"; then
+    if ! SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" $SUDO_CMD npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec" 2>&1 | tee "$log"; then
         if grep -q "ENOTEMPTY: directory not empty, rename .*clawdbot" "$log"; then
             echo -e "${WARN}→${NC} npm 留下了陈旧的 clawdbot 目录；正在清理并重试..."
             cleanup_npm_clawdbot_paths
-            SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec"
+            SHARP_IGNORE_GLOBAL_LIBVIPS="$SHARP_IGNORE_GLOBAL_LIBVIPS" $SUDO_CMD npm --loglevel "$NPM_LOGLEVEL" ${NPM_SILENT_FLAG:+$NPM_SILENT_FLAG} --no-fund --no-audit install -g --registry "$NPM_REGISTRY" "$spec"
             return $?
         fi
         return 1

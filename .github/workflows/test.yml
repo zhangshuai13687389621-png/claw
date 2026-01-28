@@ -31,9 +31,10 @@ jobs:
       - name: Uninstall Node.js (macOS Clean Test)
         if: runner.os == 'macOS'
         run: |
-          brew analytics off
-          brew uninstall node --ignore-dependencies --force || true
-          rm -rf /usr/local/bin/node /usr/local/lib/node_modules
+          sudo rm -rf $(which node) || true
+          sudo rm -rf /usr/local/bin/node /usr/local/lib/node_modules
+          sudo rm -rf /opt/homebrew/bin/node
+          sudo rm -rf /opt/hostedtoolcache/node* || true
           [ -f ~/.bash_profile ] && source ~/.bash_profile || true
           [ -f ~/.zshrc ] && source ~/.zshrc || true
           
