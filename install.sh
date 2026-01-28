@@ -418,11 +418,7 @@ install_node() {
                  # 尝试添加 symlink 如果解压位置不对? 不，strip-components=1 should put bin/node to /usr/local/bin/node
                  exit 1
             fi
-	        else
-	            echo -e "${ERROR}错误：无法检测到包管理器${NC}"
-	            echo "请手动安装 Node.js 22+: https://nodejs.org"
-            exit 1
-        fi
+
         echo -e "${SUCCESS}✓${NC} Node.js 已安装"
     fi
 }

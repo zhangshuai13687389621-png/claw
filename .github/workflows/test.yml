@@ -37,10 +37,11 @@ jobs:
           sudo rm -rf /opt/homebrew/bin/node
           sudo rm -rf /opt/hostedtoolcache/node* || true
           
-          # Uninstall Homebrew
-          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
+          # Uninstall Homebrew (Manual force remove to avoid script prompts/cancellations)
           sudo rm -rf /opt/homebrew
           sudo rm -rf /usr/local/Homebrew
+          sudo rm -rf /usr/local/bin/brew
+          sudo rm -rf /usr/local/var/homebrew
           
           # Remove Git (Brew/User version only, implies system git /usr/bin/git remains)
           sudo rm -rf /usr/local/bin/git
