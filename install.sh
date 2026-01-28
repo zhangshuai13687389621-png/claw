@@ -508,6 +508,10 @@ require_sudo() {
 }
 
 install_git() {
+    if command -v git &> /dev/null; then
+         echo -e "${SUCCESS}✓${NC} Git 已安装"
+         return 0
+    fi
     echo -e "${WARN}→${NC} 正在安装 Git..."
     if [[ "$OS" == "macos" ]]; then
         brew install git
@@ -1052,12 +1056,14 @@ EOF
         is_upgrade=true
     fi
 
-    # Step 0: Configure Mirrors & Basic Tools
+    # Step 0: Configure Mirrors (Linux)
     configure_linux_mirrors
-    install_git
 
     # Step 1: Homebrew (macOS only)
     install_homebrew
+    
+    # Step 1.5: Git (Must be AFTER Homebrew on macOS)
+    install_git
 
     # Step 2: Node.js
     if ! check_node; then
