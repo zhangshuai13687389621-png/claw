@@ -16,8 +16,16 @@ jobs:
         if: runner.os != 'Windows'
         run: bash claw.sh
 
-      - name: Run Install Script (Real)
-        if: runner.os != 'Windows'
+      - name: Uninstall Node.js (Ubuntu Clean Test)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get remove -y nodejs npm || true
+          sudo rm -rf /usr/local/lib/node_modules
+          sudo rm -rf /usr/local/bin/node
+          sudo rm -rf /opt/hostedtoolcache/node* || true
+
+      - name: Run Install Script (Clean Linux)
+        if: runner.os == 'Linux'
         run: bash install.sh --no-prompt --no-onboard
 
       - name: Uninstall Node.js (macOS Clean Test)
@@ -26,8 +34,8 @@ jobs:
           brew analytics off
           brew uninstall node --ignore-dependencies --force || true
           rm -rf /usr/local/bin/node /usr/local/lib/node_modules
-          source ~/.bash_profile || true
-          source ~/.zshrc || true
+          [ -f ~/.bash_profile ] && source ~/.bash_profile || true
+          [ -f ~/.zshrc ] && source ~/.zshrc || true
           
       - name: Run Install Script (Clean macOS)
         if: runner.os == 'macOS'

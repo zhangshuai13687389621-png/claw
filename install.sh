@@ -368,7 +368,7 @@ install_node() {
 	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
                 # 替换为清华源
                 sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
-	            $SUDO_CMD -E bash "$tmp"
+	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
 	            $SUDO_CMD apt-get install -y nodejs
 	        elif command -v dnf &> /dev/null; then
 	            local tmp
