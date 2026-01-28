@@ -366,35 +366,58 @@ install_node() {
         
         echo -e "${SUCCESS}✓${NC} Node.js 已安装"
 	    elif [[ "$OS" == "linux" ]]; then
-	        echo -e "${WARN}→${NC} 正在通过 NodeSource 安装 Node.js..."
+	        # 统一使用 npmmirror 二进制安装 (Linux)
+            echo -e "${WARN}→${NC} 正在通过 npmmirror 安装 Node.js..."
+            
+            # 检测架构
+            local arch
+            arch=$(uname -m)
+            case "$arch" in
+                x86_64) arch="x64" ;;
+                aarch64) arch="arm64" ;;
+                *)
+                    echo -e "${ERROR}错误：不支持的架构 $arch${NC}"
+                    exit 1
+                    ;;
+            esac
+            
             require_sudo
-	        if command -v apt-get &> /dev/null; then
-	            local tmp
-	            tmp="$(mktempfile)"
-	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
-                # 替换为华为云镜像源
-                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
-                sed -i 's|deb.nodesource.com/node_|mirrors.huaweicloud.com/nodesource/deb/node_|g' "$tmp"
-	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
-	            $SUDO_CMD apt-get install -y nodejs npm
-	        elif command -v dnf &> /dev/null; then
-	            local tmp
-	            tmp="$(mktempfile)"
-	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
-                # 替换为华为云镜像源
-                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
-                sed -i 's|rpm.nodesource.com/pub_|mirrors.huaweicloud.com/nodesource/rpm/pub_|g' "$tmp"
-	            $SUDO_CMD bash "$tmp"
-	            $SUDO_CMD dnf install -y nodejs npm
-	        elif command -v yum &> /dev/null; then
-	            local tmp
-	            tmp="$(mktempfile)"
-	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
-                # 替换为华为云镜像源
-                # 替换为华为云镜像源 (仅替换仓库地址，避开 gpgkey)
-                sed -i 's|rpm.nodesource.com/pub_|mirrors.huaweicloud.com/nodesource/rpm/pub_|g' "$tmp"
-	            $SUDO_CMD bash "$tmp"
-	            $SUDO_CMD yum install -y nodejs npm
+            # 安装必要的依赖 (tar, xz, git)
+            # 即使使用二进制安装 Node，我们也需要 git 和解压工具
+            if command -v apt-get &> /dev/null; then
+                $SUDO_CMD apt-get update -y
+                $SUDO_CMD apt-get install -y curl tar xz-utils git
+            elif command -v dnf &> /dev/null; then
+                $SUDO_CMD dnf install -y curl tar xz git
+            elif command -v yum &> /dev/null; then
+                $SUDO_CMD yum install -y curl tar xz git
+            fi
+
+            # 下载并解压
+            local node_ver="v22.13.1"
+            local node_dist="node-${node_ver}-linux-${arch}.tar.xz"
+            local node_url="https://npmmirror.com/mirrors/node/${node_ver}/${node_dist}"
+            local tmp
+            tmp="$(mktempfile).tar.xz"
+            
+            download_file "$node_url" "$tmp"
+            
+            echo -e "${WARN}→${NC} 正在解压到 /usr/local..."
+            # 尝试解压到 /usr/local
+            # --no-same-owner 防止 root 拥有的 tarball 文件保留 ownership (虽然 binary 通常是 0:0, 但保险起见)
+            if ! $SUDO_CMD tar -xJf "$tmp" -C /usr/local --strip-components=1 --no-same-owner; then
+                 echo -e "${ERROR}解压失败，尝试不使用 J 参数...${NC}"
+                 $SUDO_CMD tar -xf "$tmp" -C /usr/local --strip-components=1 --no-same-owner
+            fi
+            
+            rm -f "$tmp"
+            
+            # 验证安装
+            if ! command -v node &> /dev/null; then
+                 echo -e "${ERROR}Node.js 安装失败，请检查 /usr/local/bin 是否在 PATH 中${NC}"
+                 # 尝试添加 symlink 如果解压位置不对? 不，strip-components=1 should put bin/node to /usr/local/bin/node
+                 exit 1
+            fi
 	        else
 	            echo -e "${ERROR}错误：无法检测到包管理器${NC}"
 	            echo "请手动安装 Node.js 22+: https://nodejs.org"

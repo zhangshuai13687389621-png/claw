@@ -28,13 +28,24 @@ jobs:
         if: runner.os == 'Linux'
         run: bash install.sh --no-prompt --no-onboard
 
-      - name: Uninstall Node.js (macOS Clean Test)
+      - name: Clean Environment (macOS)
         if: runner.os == 'macOS'
         run: |
+          # Uninstall Node.js
           sudo rm -rf $(which node) || true
           sudo rm -rf /usr/local/bin/node /usr/local/lib/node_modules
           sudo rm -rf /opt/homebrew/bin/node
           sudo rm -rf /opt/hostedtoolcache/node* || true
+          
+          # Uninstall Homebrew
+          NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/uninstall.sh)" || true
+          sudo rm -rf /opt/homebrew
+          sudo rm -rf /usr/local/Homebrew
+          
+          # Remove Git (Brew/User version only, implies system git /usr/bin/git remains)
+          sudo rm -rf /usr/local/bin/git
+          sudo rm -rf /opt/homebrew/bin/git
+          
           [ -f ~/.bash_profile ] && source ~/.bash_profile || true
           [ -f ~/.zshrc ] && source ~/.zshrc || true
           
