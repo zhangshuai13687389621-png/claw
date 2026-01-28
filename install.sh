@@ -433,6 +433,59 @@ check_git() {
     return 1
 }
 
+configure_linux_mirrors() {
+    if [[ "$OS" != "linux" ]]; then return 0; fi
+    
+    echo -e "${WARN}→${NC} 正在配置系统软件源镜像 (阿里云)..."
+    require_sudo
+    
+    # 获取 OS 发行版信息
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+    fi
+
+    if command -v apt-get &> /dev/null; then
+        # Debian/Ubuntu
+        if [ ! -f /etc/apt/sources.list.bak ]; then
+            $SUDO_CMD cp /etc/apt/sources.list /etc/apt/sources.list.bak
+            echo -e "${SUCCESS}✓${NC} 已备份 /etc/apt/sources.list"
+        fi
+        
+        # 替换为阿里云镜像
+        # Ubuntu: archive.ubuntu.com/security.ubuntu.com -> mirrors.aliyun.com
+        # Debian: deb.debian.org/security.debian.org -> mirrors.aliyun.com
+        $SUDO_CMD sed -i 's/archive.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+        $SUDO_CMD sed -i 's/security.ubuntu.com/mirrors.aliyun.com/g' /etc/apt/sources.list
+        $SUDO_CMD sed -i 's/deb.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+        $SUDO_CMD sed -i 's/security.debian.org/mirrors.aliyun.com/g' /etc/apt/sources.list
+        
+        $SUDO_CMD apt-get update -y
+        
+    elif command -v dnf &> /dev/null || command -v yum &> /dev/null; then
+        # CentOS/RHEL/Rocky/Alma
+        # 这里的处理比较复杂，CentOS 7 与 8/Stream 结构不同。
+        # 简单处理：仅当检测到 CentOS 时尝试替换
+        if [[ "${ID}" == "centos" ]]; then
+             # 备份 repo 文件
+             if [ ! -d /etc/yum.repos.d/backup ]; then
+                 $SUDO_CMD mkdir -p /etc/yum.repos.d/backup
+                 $SUDO_CMD cp /etc/yum.repos.d/*.repo /etc/yum.repos.d/backup/
+                 echo -e "${SUCCESS}✓${NC} 已备份 yum 源到 /etc/yum.repos.d/backup/"
+             fi
+             
+             #CentOS 7
+             if [[ "${VERSION_ID}" == "7" ]]; then
+                $SUDO_CMD sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-Base.repo
+                $SUDO_CMD sed -i 's|#baseurl=http://mirror.centos.org|baseurl=http://mirrors.aliyun.com|g' /etc/yum.repos.d/CentOS-Base.repo
+             fi
+             # 其它版本暂不处理，风险较大
+        fi
+        # Rocky/Alma 等通常自带 mirrorlist 选择最快镜像，或用户自行配置。脚本不应过度干涉。
+        echo -e "${WARN}!${NC} 仅对 Ubuntu/Debian/CentOS7 自动配置了镜像。其他系统请手动配置以加速下载。"
+    fi
+}
+
+
 is_root() {
     [[ "$(id -u)" -eq 0 ]]
 }
@@ -998,6 +1051,10 @@ EOF
     if check_existing_clawdbot; then
         is_upgrade=true
     fi
+
+    # Step 0: Configure Mirrors & Basic Tools
+    configure_linux_mirrors
+    install_git
 
     # Step 1: Homebrew (macOS only)
     install_homebrew
