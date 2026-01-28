@@ -366,7 +366,8 @@ install_node() {
                 # 替换为华为云镜像源
                 sed -i 's|deb.nodesource.com|mirrors.huaweicloud.com/nodesource/deb|g' "$tmp"
 	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
-	            $SUDO_CMD apt-get install -y nodejs
+	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
+	            $SUDO_CMD apt-get install -y nodejs npm
 	        elif command -v dnf &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
@@ -374,7 +375,8 @@ install_node() {
                 # 替换为华为云镜像源
                 sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
-	            $SUDO_CMD dnf install -y nodejs
+	            $SUDO_CMD bash "$tmp"
+	            $SUDO_CMD dnf install -y nodejs npm
 	        elif command -v yum &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
@@ -382,7 +384,8 @@ install_node() {
                 # 替换为华为云镜像源
                 sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
-	            $SUDO_CMD yum install -y nodejs
+	            $SUDO_CMD bash "$tmp"
+	            $SUDO_CMD yum install -y nodejs npm
 	        else
 	            echo -e "${ERROR}错误：无法检测到包管理器${NC}"
 	            echo "请手动安装 Node.js 22+: https://nodejs.org"
