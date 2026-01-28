@@ -363,27 +363,24 @@ install_node() {
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
-                # 替换为清华源
-                sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
-	            download_file "https://deb.nodesource.com/setup_22.x" "$tmp"
-                # 替换为清华源
-                sed -i 's|deb.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/deb|g' "$tmp"
+                # 替换为华为云镜像源
+                sed -i 's|deb.nodesource.com|mirrors.huaweicloud.com/nodesource/deb|g' "$tmp"
 	            $SUDO_CMD ${SUDO_CMD:+-E} bash "$tmp"
 	            $SUDO_CMD apt-get install -y nodejs
 	        elif command -v dnf &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
-                # 替换为清华源
-                sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
+                # 替换为华为云镜像源
+                sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
 	            $SUDO_CMD dnf install -y nodejs
 	        elif command -v yum &> /dev/null; then
 	            local tmp
 	            tmp="$(mktempfile)"
 	            download_file "https://rpm.nodesource.com/setup_22.x" "$tmp"
-                # 替换为清华源
-                sed -i 's|rpm.nodesource.com|mirrors.tuna.tsinghua.edu.cn/nodesource/rpm|g' "$tmp"
+                # 替换为华为云镜像源
+                sed -i 's|rpm.nodesource.com|mirrors.huaweicloud.com/nodesource/rpm|g' "$tmp"
 	            $SUDO_CMD bash "$tmp"
 	            $SUDO_CMD yum install -y nodejs
 	        else
